@@ -1,0 +1,62 @@
+services:
+  # Container A — Target Web Server
+  web_target:
+    image: nginx:alpine
+    container_name: web_target
+    hostname: web-target
+    networks:
+      pmg_testbed:
+        ipv4_address: 10.5.0.10
+    ports:
+      - "8080:80"
+      - "8443:443"
+
+  # Container B — Secure Host (SSH)
+  secure_host:
+    image: linuxserver/openssh-server:latest
+    container_name: secure_host
+    hostname: secure-host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - PASSWORD_ACCESS=true
+      - USER_NAME=testuser
+      - USER_PASSWORD=testpass123
+    networks:
+      pmg_testbed:
+        ipv4_address: 10.5.0.20
+
+  # Container C — Legacy/Closed Host (no listening services)
+  legacy_host:
+    image: alpine:latest
+    container_name: legacy_host
+    hostname: legacy-host
+    command: ["sh", "-c", "apk add --no-cache iputils && sleep infinity"]
+    networks:
+      pmg_testbed:
+        ipv4_address: 10.5.0.30
+
+  # Container D — Vulnerable/Victim Host (Redis + Memcached stubs)
+  victim_host:
+    image: redis:alpine
+    container_name: victim_host
+    hostname: victim-host
+    command: ["redis-server", "--protected-mode", "no", "--port", "6379"]
+    networks:
+      pmg_testbed:
+        ipv4_address: 10.5.0.40
+
+networks:
+  pmg_testbed:
+    name: pmg_testbed
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
+          gateway: 10.5.0.1
+
+
+
+
+
